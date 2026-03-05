@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bean Button</title>
+  <link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Titan+One&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bean-green: #4a7c3f;
+      --bean-light: #7cb87a;
+      --bean-dark: #2e5228;
+      --cream: #f5f0e8;
+      --flash-yellow: #ffe94d;
+      --flash-orange: #ff7b35;
+    }
+
+    body {
+      background-color: var(--cream);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Boogaloo', cursive;
+      overflow: hidden;
+      background-image:
+        radial-gradient(circle at 20% 80%, rgba(74,124,63,0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(74,124,63,0.06) 0%, transparent 50%);
+    }
+
+    /* Scattered background beans */
+    .bg-bean {
+      position: fixed;
+      opacity: 0.07;
+      pointer-events: none;
+    }
+
+    .scene {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 48px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .title {
+      font-family: 'Titan One', cursive;
+      font-size: clamp(1.2rem, 3vw, 1.6rem);
+      color: var(--bean-dark);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      opacity: 0.5;
+    }
+
+    /* The Bean Button */
+    .bean-btn {
+      position: relative;
+      width: 220px;
+      height: 160px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      outline: none;
+      transform-origin: center center;
+      transition: transform 0.1s;
+      filter: drop-shadow(0 12px 24px rgba(46,82,40,0.35));
+    }
+
+    .bean-btn:hover {
+      filter: drop-shadow(0 16px 32px rgba(46,82,40,0.45));
+    }
+
+    .bean-btn:active {
+      transform: scale(0.93) translateY(4px);
+      filter: drop-shadow(0 4px 8px rgba(46,82,40,0.3));
+    }
+
+    .bean-svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .bean-body {
+      transition: fill 0.08s;
+    }
+
+    .bean-btn:hover .bean-body {
+      fill: #5a9154;
+    }
+
+    .bean-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Titan One', cursive;
+      font-size: 2rem;
+      color: white;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.25);
+      letter-spacing: 0.06em;
+      pointer-events: none;
+      padding-bottom: 8px;
+    }
+
+    /* BEAN flash */
+    .flash-container {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .flash-word {
+      font-family: 'Titan One', cursive;
+      font-size: clamp(5rem, 22vw, 14rem);
+      color: var(--bean-dark);
+      letter-spacing: -0.02em;
+      opacity: 0;
+      transform: scale(0.4) rotate(-8deg);
+      text-shadow:
+        0 0 0px var(--flash-yellow),
+        4px 4px 0 var(--bean-dark);
+      will-change: transform, opacity;
+    }
+
+    .flash-word.active {
+      animation: beanFlash 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes beanFlash {
+      0% { opacity: 0; transform: scale(0.3) rotate(-12deg); }
+      15% { opacity: 1; transform: scale(1.18) rotate(3deg);
+             text-shadow: 0 0 60px var(--flash-yellow), 6px 6px 0 var(--bean-dark); }
+      35% { opacity: 1; transform: scale(0.95) rotate(-2deg); }
+      55% { opacity: 1; transform: scale(1.04) rotate(1deg); }
+      70% { opacity: 1; transform: scale(1) rotate(0deg); }
+      85% { opacity: 0.7; transform: scale(1) rotate(0deg); }
+      100% { opacity: 0; transform: scale(1.1) rotate(0deg); }
+    }
+
+    /* Particle beans that burst out */
+    .particles {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 99;
+    }
+
+    .particle {
+      position: absolute;
+      font-size: 1.6rem;
+      opacity: 0;
+      will-change: transform, opacity;
+    }
+
+    .particle.pop {
+      animation: particleFly 0.8s ease-out forwards;
+    }
+
+    @keyframes particleFly {
+      0% { opacity: 1; transform: translate(0,0) scale(0.5) rotate(0deg); }
+      60% { opacity: 1; }
+      100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1) rotate(var(--rot)); }
+    }
+
+    /* Ripple on button click */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      width: 10px;
+      height: 10px;
+      background: rgba(255,255,255,0.5);
+      pointer-events: none;
+      animation: rippleOut 0.5s ease-out forwards;
+    }
+
+    @keyframes rippleOut {
+      0% { transform: scale(1); opacity: 0.6; }
+      100% { transform: scale(22); opacity: 0; }
+    }
+
+    /* Bounce animation for bean button after press */
+    @keyframes beanBounce {
+      0% { transform: scale(0.93) translateY(4px); }
+      40% { transform: scale(1.08) translateY(-6px); }
+      65% { transform: scale(0.97) translateY(2px); }
+      82% { transform: scale(1.03) translateY(-2px); }
+      100% { transform: scale(1) translateY(0); }
+    }
+
+    .bean-btn.bouncing {
+      animation: beanBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    /* Counter */
+    .counter {
+      font-family: 'Titan One', cursive;
+      font-size: 1.1rem;
+      color: var(--bean-dark);
+      opacity: 0.35;
+      letter-spacing: 0.08em;
+      height: 1.4em;
+      transition: opacity 0.3s;
+    }
+
+    .counter.visible { opacity: 0.55; }
+  </style>
+</head>
+<body>
+
+  <!-- Background decorative beans -->
+  <svg class="bg-bean" style="width:120px;top:8%;left:6%;transform:rotate(30deg)" viewBox="0 0 100 80">
+    <ellipse cx="50" cy="40" rx="45" ry="35" fill="#4a7c3f" transform="rotate(-20,50,40)"/>
+    <path d="M30 35 Q50 20 70 35" stroke="#2e5228" stroke-width="3" fill="none"/>
+  </svg>
+  <svg class="bg-bean" style="width:80px;top:15%;right:8%;transform:rotate(-20deg)" viewBox="0 0 100 80">
+    <ellipse cx="50" cy="40" rx="45" ry="35" fill="#4a7c3f" transform="rotate(-20,50,40)"/>
+    <path d="M30 35 Q50 20 70 35" stroke="#2e5228" stroke-width="3" fill="none"/>
+  </svg>
+  <svg class="bg-bean" style="width:100px;bottom:12%;left:12%;transform:rotate(60deg)" viewBox="0 0 100 80">
+    <ellipse cx="50" cy="40" rx="45" ry="35" fill="#4a7c3f" transform="rotate(-20,50,40)"/>
+    <path d="M30 35 Q50 20 70 35" stroke="#2e5228" stroke-width="3" fill="none"/>
+  </svg>
+  <svg class="bg-bean" style="width:90px;bottom:20%;right:10%;transform:rotate(-40deg)" viewBox="0 0 100 80">
+    <ellipse cx="50" cy="40" rx="45" ry="35" fill="#4a7c3f" transform="rotate(-20,50,40)"/>
+    <path d="M30 35 Q50 20 70 35" stroke="#2e5228" stroke-width="3" fill="none"/>
+  </svg>
+
+  <div class="scene">
+    <p class="title">Press the bean</p>
+
+    <button class="bean-btn" id="beanBtn" aria-label="Bean button">
+      <svg class="bean-svg" viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg">
+        <!-- Bean shadow -->
+        <ellipse cx="112" cy="154" rx="80" ry="10" fill="rgba(46,82,40,0.18)"/>
+        <!-- Bean body (organic shape) -->
+        <path class="bean-body" d="
+          M 40 80
+          C 35 40, 70 10, 110 15
+          C 150 20, 190 35, 188 75
+          C 186 110, 165 148, 125 150
+          C 85 152, 45 120, 40 80 Z
+        " fill="#4a7c3f"/>
+        <!-- Highlight -->
+        <path d="
+          M 65 40
+          C 75 25, 100 22, 120 32
+          C 105 30, 80 35, 70 50 Z
+        " fill="rgba(255,255,255,0.18)"/>
+        <!-- Bean crease line -->
+        <path d="M 75 72 Q 110 55 148 70" stroke="#2e5228" stroke-width="3.5" fill="none" stroke-linecap="round" opacity="0.6"/>
+      </svg>
+      <span class="bean-label">BEAN</span>
+    </button>
+
+    <p class="counter" id="counter"></p>
+  </div>
+
+  <!-- Flash word -->
+  <div class="flash-container">
+    <span class="flash-word" id="flashWord">BEAN</span>
+  </div>
+
+  <!-- Particles -->
+  <div class="particles" id="particles"></div>
+
+  <script>
+    const btn = document.getElementById('beanBtn');
+    const flashWord = document.getElementById('flashWord');
+    const counterEl = document.getElementById('counter');
+    const particlesEl = document.getElementById('particles');
+
+    let count = 0;
+    let flashTimeout = null;
+
+    const beanEmojis = ['🫘', '🌱', '✨', '💚', '🟢'];
+
+    btn.addEventListener('click', (e) => {
+      count++;
+
+      // Update counter
+      counterEl.classList.add('visible');
+      if (count === 1) counterEl.textContent = `1 bean`;
+      else counterEl.textContent = `${count} beans`;
+
+      // Bounce animation
+      btn.classList.remove('bouncing');
+      void btn.offsetWidth; // reflow
+      btn.classList.add('bouncing');
+      btn.addEventListener('animationend', () => btn.classList.remove('bouncing'), { once: true });
+
+      // Flash word
+      if (flashTimeout) clearTimeout(flashTimeout);
+      flashWord.classList.remove('active');
+      void flashWord.offsetWidth;
+      flashWord.classList.add('active');
+      flashTimeout = setTimeout(() => flashWord.classList.remove('active'), 700);
+
+      // Spawn particles
+      spawnParticles(e.clientX, e.clientY);
+    });
+
+    function spawnParticles(cx, cy) {
+      const count = 7 + Math.floor(Math.random() * 5);
+      for (let i = 0; i < count; i++) {
+        const p = document.createElement('span');
+        p.className = 'particle';
+        p.textContent = beanEmojis[Math.floor(Math.random() * beanEmojis.length)];
+        p.style.left = cx + 'px';
+        p.style.top = cy + 'px';
+
+        const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.8;
+        const dist = 80 + Math.random() * 120;
+        const dx = Math.cos(angle) * dist;
+        const dy = Math.sin(angle) * dist - 40;
+        const rot = (Math.random() - 0.5) * 360;
+
+        p.style.setProperty('--dx', dx + 'px');
+        p.style.setProperty('--dy', dy + 'px');
+        p.style.setProperty('--rot', rot + 'deg');
+        p.style.animationDelay = (Math.random() * 0.05) + 's';
+
+        particlesEl.appendChild(p);
+        p.classList.add('pop');
+
+        p.addEventListener('animationend', () => p.remove());
+      }
+    }
+  </script>
+</body>
+</html>
