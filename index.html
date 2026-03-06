@@ -386,4 +386,61 @@ function updatePlayer(dt){
   const jx=JOY.active?JOY.dx/JOY.R:0; // strafe -1..1
   const jy=JOY.active?JOY.dy/JOY.R:0; // forward/back -1..1
   // Look from touch drag
+  const lx=LOOK.active?LOOK.dx*.006:0;
+  // Keyboard fallback
+  const kx=K['ArrowLeft']?.5:K['ArrowRight']?.5:0;
+  const ky=K['KeyW']?.5:K['KeyS']?.5:0;
+  // Move
+  PL.ang+=lx+kx;
+  const dX=Math.cos(PL.ang),dY=Math.sin(PL.ang);
+  const nX=PL.x+(dX*(jy+ky)-.dY*(jx+kx))*.025*dt;
+  const nY=PL.y+(dY*(jy+ky)+dX*(jx+kx))*.025*dt;
+  if(MAP[nY|0][PL.x|0]===0)PL.x=nX;
+  if(MAP[PL.y|0][nX|0]===0)PL.y=nY;
+  if(PL.scd>0)PL.scd-=dt;
+  if(PL.sflash>0)PL.sflash-=dt;
+  if(PL.dflash>0)PL.dflash-=dt;
 }
+
+// ────────────────────────────────────────────────────────────────────────────────
+// ── MAIN LOOP
+// ────────────────────────────────────────────────────────────────────────────────
+deadSpr=makeDeadSprite();
+SIGNS.forEach((s,i)=>{sprites[i]=makeZombie(s);});
+spawnEnemies();
+
+function frame(now){
+  const dt=Math.min(33,now-FC);FC=now;
+  ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+  if(GS==='playing'){
+    updatePlayer(dt);updateEnemies(dt);
+    drawEnv();castRays();renderSprites();
+  }
+  if(PL.dflash>0){ctx.fillStyle=`rgba(255,0,0,${PL.dflash/14*.4})`;ctx.fillRect(0,0,W,H);}
+  if(PL.sflash>0){ctx.fillStyle=`rgba(200,200,200,${PL.sflash/9*.35})`;ctx.fillRect(0,0,W,H);}
+  // UI
+  ctx.fillStyle='#0f0';ctx.font='12px monospace';ctx.textAlign='left';
+  ctx.fillText(`HP: ${PL.hp}`,8,16);ctx.fillText(`Kills: ${PL.kills}`,8,32);ctx.fillText(`Score: ${PL.score}`,8,48);
+  if(GS==='start'){
+    ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#0f0';ctx.font='bold 32px monospace';ctx.textAlign='center';
+    ctx.fillText('CALL OF BARA',W/2,H/2-40);
+    ctx.font='16px monospace';ctx.fillText('[TAP/CLICK TO START]',W/2,H/2+40);
+  }
+  if(GS==='dead'){
+    ctx.fillStyle='rgba(200,0,0,.5)';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#f00';ctx.font='bold 32px monospace';ctx.textAlign='center';
+    ctx.fillText('YOU DIED',W/2,H/2);ctx.font='14px monospace';ctx.fillText('[TAP/CLICK TO RESTART]',W/2,H/2+60);
+  }
+  if(GS==='win'){
+    ctx.fillStyle='rgba(0,200,0,.4)';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#0f0';ctx.font='bold 40px monospace';ctx.textAlign='center';
+    ctx.fillText('YOU WIN!',W/2,H/2-20);ctx.font='18px monospace';ctx.fillText(`Final Score: ${PL.score}`,W/2,H/2+40);
+    ctx.fillText('[TAP/CLICK TO RESTART]',W/2,H/2+80);
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
