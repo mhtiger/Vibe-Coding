@@ -393,7 +393,7 @@ function updatePlayer(dt){
   // Move
   PL.ang+=lx+kx;
   const dX=Math.cos(PL.ang),dY=Math.sin(PL.ang);
-  const nX=PL.x+(dX*(jy+ky)-.dY*(jx+kx))*.025*dt;
+  const nX=PL.x+(dX*(jy+ky)-dY*(jx+kx))*.025*dt;
   const nY=PL.y+(dY*(jy+ky)+dX*(jx+kx))*.025*dt;
   if(MAP[nY|0][PL.x|0]===0)PL.x=nX;
   if(MAP[PL.y|0][nX|0]===0)PL.y=nY;
