@@ -24,13 +24,29 @@
     box-shadow:0 0 20px rgba(255,60,60,.4);
   }
   #fireBtn:active{background:rgba(220,80,60,.85);transform:scale(.92)}
+  #controls{position:absolute;bottom:20px;left:20px;display:flex;flex-direction:column;gap:10px}
+  #moveControls{display:grid;grid-template-areas:". up .""left . right"". down .";gap:5px}
+  #moveUp{grid-area:up}#moveDown{grid-area:down}#strafeLeft{grid-area:left}#strafeRight{grid-area:right}
+  #controls button{width:50px;height:50px;background:rgba(100,100,100,.5);border:2px solid #fff;color:#fff;font-size:20px;border-radius:5px;pointer-events:auto;-webkit-tap-highlight-color:transparent}
+  #rotateControls{display:flex;gap:10px}#rotateLeft,#rotateRight{width:60px;height:50px}
 </style>
 </head>
 <body>
 <div id="wrap">
   <canvas id="c"></canvas>
-  <div id="overlay">
-    <!-- Fire button (mobile only, hidden on desktop via JS) -->
+  <div id="overlay">    <!-- Controls (mobile only) -->
+    <div id="controls" style="display:none">
+      <div id="moveControls">
+        <button id="moveUp">↑</button>
+        <button id="moveDown">↓</button>
+        <button id="strafeLeft">←</button>
+        <button id="strafeRight">→</button>
+      </div>
+      <div id="rotateControls">
+        <button id="rotateLeft">↺</button>
+        <button id="rotateRight">↻</button>
+      </div>
+    </div>    <!-- Fire button (mobile only, hidden on desktop via JS) -->
     <div id="fireBtn" style="display:none">\ud83d\udd2b</div>
   </div>
 </div>
@@ -52,7 +68,7 @@ function scaleCanvas(){
   // keep overlay in sync
   document.getElementById('overlay').style.width=(W*s)+'px';
   document.getElementById('overlay').style.height=(H*s)+'px';
-  if(isMobile())document.getElementById('fireBtn').style.display='flex';
+  if(isMobile()){document.getElementById('fireBtn').style.display='flex';document.getElementById('controls').style.display='flex';}
 }
 scaleCanvas();window.addEventListener('resize',scaleCanvas);
 
@@ -254,6 +270,16 @@ const fireEl=document.getElementById('fireBtn');
 fireEl.addEventListener('touchstart',e=>{e.preventDefault();if(GS==='playing')tryShoot();else startGame();},{passive:false});
 fireEl.addEventListener('mousedown',e=>{e.preventDefault();if(GS==='playing')tryShoot();else startGame();});
 
+// Control buttons
+let moveForward=false,moveBackward=false,strafeLeft=false,strafeRight=false,rotateLeft=false,rotateRight=false;
+function addButtonListeners(id,onStart,onEnd){const el=document.getElementById(id);if(!el)return;el.addEventListener('touchstart',e=>{e.preventDefault();onStart();},{passive:false});el.addEventListener('touchend',e=>{e.preventDefault();onEnd();},{passive:false});el.addEventListener('mousedown',e=>{e.preventDefault();onStart();});el.addEventListener('mouseup',e=>{e.preventDefault();onEnd();});el.addEventListener('mouseleave',()=>onEnd());}
+addButtonListeners('moveUp',()=>moveForward=true,()=>moveForward=false);
+addButtonListeners('moveDown',()=>moveBackward=true,()=>moveBackward=false);
+addButtonListeners('strafeLeft',()=>strafeLeft=true,()=>strafeLeft=false);
+addButtonListeners('strafeRight',()=>strafeRight=true,()=>strafeRight=false);
+addButtonListeners('rotateLeft',()=>rotateLeft=true,()=>rotateLeft=false);
+addButtonListeners('rotateRight',()=>rotateRight=true,()=>rotateRight=false);
+
 // Desktop pointer lock
 let locked=false;
 canvas.addEventListener('click',()=>{
@@ -385,16 +411,20 @@ function updateEnemies(dt){
 
 // \u2500\u2500 PLAYER UPDATE \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function updatePlayer(dt){
-  // Virtual joystick input
-  const jx=JOY.active?JOY.dx/JOY.R:0; // strafe -1..1
-  const jy=JOY.active?JOY.dy/JOY.R:0; // forward/back -1..1
+  // Button inputs
+  let jx=(strafeLeft?-1:0)+(strafeRight?1:0); // strafe
+  let jy=(moveForward?1:0)+(moveBackward?-1:0); // forward/back
+  // Virtual joystick input (fallback)
+  if(jx===0&&jy===0){jx=JOY.active?JOY.dx/JOY.R:0;jy=JOY.active?JOY.dy/JOY.R:0;}
   // Look from touch drag
   const lx=LOOK.active?LOOK.dx*.006:0;
+  // Rotate buttons
+  const rx=(rotateLeft?-0.05:0)+(rotateRight?0.05:0);
   // Keyboard fallback
-  const kx=K['ArrowLeft']?.5:K['ArrowRight']?.5:0;
-  const ky=K['KeyW']?.5:K['KeyS']?.5:0;
+  const kx=K['ArrowLeft']?-0.5:K['ArrowRight']?0.5:0;
+  const ky=K['KeyW']?0.5:K['KeyS']?-0.5:0;
   // Move
-  PL.ang+=lx+kx;
+  PL.ang+=lx+rx+kx;
   const dX=Math.cos(PL.ang),dY=Math.sin(PL.ang);
   const nX=PL.x+(dX*(jy+ky)-dY*(jx+kx))*.05*dt;
   const nY=PL.y+(dY*(jy+ky)+dX*(jx+kx))*.05*dt;
