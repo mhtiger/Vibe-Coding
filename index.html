@@ -93,7 +93,7 @@ function fogHex(h,f){
 }
 
 // \u2500\u2500 PLAYER \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-const PL={x:2.5,y:2.5,ang:.5,hp:100,score:0,kills:0,
+const PL={x:2.5,y:2.5,ang:.5,hp:1000,score:0,kills:0,
   scd:0,sflash:0,dflash:0,bph:0,bY:0,mov:false};
 
 // \u2500\u2500 ENEMIES \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
@@ -180,7 +180,10 @@ function makeDeadSprite(){
 }
 
 function spawnEnemies(){
-  enemies=SPAWNS.map((sp,i)=>({x:sp.x,y:sp.y,hp:3,state:'idle',atk:0,flash:0,idx:i%SIGNS.length}));
+  enemies=SPAWNS.filter(sp=>{
+    const dx=sp.x-PL.x,dy=sp.y-PL.y;
+    return Math.sqrt(dx*dx+dy*dy)>8;
+  }).map((sp,i)=>({x:sp.x,y:sp.y,hp:3,state:'idle',atk:0,flash:0,idx:i%SIGNS.length}));
 }
 
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
@@ -275,7 +278,7 @@ function tryShoot(){
     const tX=inv*(dY*dx-dX*dy),tY=inv*(-pY*dx+pX*dy);
     if(tY<.2)return;
     const sx=(W/2)*(1+tX/tY),sh=H/tY;
-    if(Math.abs(sx-W/2)<sh*.30&&tY<best){hit=e;best=tY;}
+    if(Math.abs(sx-W/2)<sh*.50&&tY<best){hit=e;best=tY;}
   });
   if(hit){hit.hp--;hit.flash=10;
     if(hit.hp<=0){hit.state='dead';PL.kills++;PL.score+=Math.max(50,Math.floor(250-best*10));}}
@@ -284,7 +287,7 @@ function tryShoot(){
 // \u2500\u2500 GAME STATE \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 let GS='start',FC=0;
 function startGame(){
-  Object.assign(PL,{x:2.5,y:2.5,ang:.5,hp:100,score:0,kills:0,scd:0,sflash:0,dflash:0,bph:0,bY:0});
+  Object.assign(PL,{x:2.5,y:2.5,ang:.5,hp:1000,score:0,kills:0,scd:0,sflash:0,dflash:0,bph:0,bY:0});
   spawnEnemies();GS='playing';FC=0;
   JOY.active=false;JOY.dx=0;JOY.dy=0;LOOK.active=false;LOOK.dx=0;
 }
@@ -367,11 +370,11 @@ function updateEnemies(dt){
     if(dist<12&&e.state==='idle')e.state='chase';
     if(e.state==='chase'){
       if(dist>0.65){
-        const sp=.022*dt,nx=e.x+dx/dist*sp,ny=e.y+dy/dist*sp;
+        const sp=.015*dt,nx=e.x+dx/dist*sp,ny=e.y+dy/dist*sp;
         if(MAP[e.y|0][nx|0]===0)e.x=nx;
         if(MAP[ny|0][e.x|0]===0)e.y=ny;
       } else if(e.atk<=0){
-        PL.hp-=10;PL.dflash=14;e.atk=50;
+        PL.hp-=1;PL.dflash=14;e.atk=50;
         if(PL.hp<=0){PL.hp=0;GS='dead';}
       }
     }
@@ -393,8 +396,8 @@ function updatePlayer(dt){
   // Move
   PL.ang+=lx+kx;
   const dX=Math.cos(PL.ang),dY=Math.sin(PL.ang);
-  const nX=PL.x+(dX*(jy+ky)-dY*(jx+kx))*.025*dt;
-  const nY=PL.y+(dY*(jy+ky)+dX*(jx+kx))*.025*dt;
+  const nX=PL.x+(dX*(jy+ky)-dY*(jx+kx))*.05*dt;
+  const nY=PL.y+(dY*(jy+ky)+dX*(jx+kx))*.05*dt;
   if(MAP[nY|0][PL.x|0]===0)PL.x=nX;
   if(MAP[PL.y|0][nX|0]===0)PL.y=nY;
   if(PL.scd>0)PL.scd-=dt;
